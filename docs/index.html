@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Banking System - Live Browser Demo</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<h1>AI Banking System - Live Demo</h1>
+<p class="subtitle">A static demo that runs entirely in your browser. No server, no sign-in, no real accounts.</p>
+<div class="banner">DEMO ONLY - no real money, no real people, no real accounts. AI scores are illustrative, not regulated credit decisions. Not a production bank.
+<small>All demo data is fictitious and stored only in this browser (one localStorage key). Use "Reset demo data" to restore the seed data.</small></div>
+</header>
+
+<div class="topbar">
+<div class="role-switch" role="group" aria-label="Role switcher">
+<span>View as:</span>
+<button type="button" data-role="customer">Customer view</button>
+<button type="button" data-role="manager">Manager / Admin view</button>
+</div>
+<button type="button" id="reset-btn" class="danger">Reset demo data</button>
+</div>
+
+<nav aria-label="Demo sections">
+<button type="button" data-tab="dashboard">Dashboard</button>
+<button type="button" data-tab="accounts">Accounts</button>
+<button type="button" data-tab="transactions">Transactions</button>
+<button type="button" data-tab="fraud">Fraud Review</button>
+<button type="button" data-tab="credit">Credit Score</button>
+<button type="button" data-tab="management">Management</button>
+</nav>
+
+<main>
+<section class="view" id="view-dashboard">
+<h2>Dashboard</h2>
+<p class="muted">Summary cards and charts update live from the demo data after every deposit, withdrawal, or transfer.</p>
+<div class="grid">
+<div class="card"><h3>Total balance</h3><div class="stat" id="stat-balance">-</div><p class="muted">Across all demo accounts</p></div>
+<div class="card"><h3>Accounts</h3><div class="stat" id="stat-accounts">-</div><p class="muted">Demo accounts</p></div>
+<div class="card"><h3>Recent transactions</h3><div class="stat" id="stat-recent">-</div><p class="muted">Transactions in the last 7 days</p></div>
+<div class="card"><h3>Flagged transactions</h3><div class="stat" id="stat-flagged">-</div><p class="muted">Fraud score 70 or more</p></div>
+<div class="card"><h3>Loans in pipeline</h3><div class="stat" id="stat-loans">-</div><p class="muted">Demo loan pipeline</p></div>
+</div>
+<p class="gate-note" id="gate-note">Role gate note: you are in customer view, so the detailed fraud review queue and loan approve/reject controls are hidden. Switch to Manager / Admin view above to see them. This is a demo UI gate only, not a security boundary - all demo data is in this browser.</p>
+<h3>Charts (drawn with plain canvas from live demo data)</h3>
+<div class="grid charts">
+<div class="card"><h3>Spending by category</h3><canvas id="chart-spending" width="600" height="220"></canvas><p class="muted" id="chart-spending-caption"></p><p class="muted">Money-out transactions only, grouped by category from each transaction description.</p></div>
+<div class="card"><h3>Balance over time</h3><canvas id="chart-balance" width="600" height="220"></canvas><p class="muted">Total balance after each transaction, replayed in chronological order from the live transaction list.</p></div>
+<div class="card"><h3>Fraud-flag trend</h3><canvas id="chart-fraud" width="600" height="220"></canvas><p class="muted">Count of flagged transactions per day, counted from the live transaction list.</p></div>
+</div>
+<h3>Recent transactions</h3>
+<div class="table-wrap"><table><thead><tr><th>Date</th><th>Account</th><th>Type</th><th>Description</th><th>Amount</th><th>Balance after</th><th>Fraud score</th></tr></thead><tbody id="recent-table"></tbody></table></div>
+</section>
+
+<section class="view" id="view-accounts">
+<h2>Accounts</h2>
+<div class="grid" id="account-cards"></div>
+<h3>Account detail and history</h3>
+<label for="detail-account">Choose account</label>
+<select id="detail-account"></select>
+<div id="detail-info"></div>
+<div class="table-wrap"><table><thead><tr><th>Date</th><th>Account</th><th>Type</th><th>Description</th><th>Amount</th><th>Balance after</th><th>Fraud score</th></tr></thead><tbody id="detail-table"></tbody></table></div>
+<h3>Deposit</h3>
+<form id="deposit-form"><label>Account <select id="deposit-account"></select></label><label>Amount <input id="deposit-amount" type="number" step="0.01" min="0.01" required></label><label>Description <input id="deposit-desc" placeholder="e.g. Paycheck deposit"></label><button type="submit">Deposit</button></form>
+<div id="deposit-msg" class="msg" style="display:none"></div>
+<h3>Withdrawal</h3>
+<form id="withdraw-form"><label>Account <select id="withdraw-account"></select></label><label>Amount <input id="withdraw-amount" type="number" step="0.01" min="0.01" required></label><label>Description <input id="withdraw-desc" placeholder="e.g. Grocery store"></label><button type="submit">Withdraw</button></form>
+<div id="withdraw-msg" class="msg" style="display:none"></div>
+<h3>Internal transfer</h3>
+<form id="transfer-form"><label>From <select id="transfer-from"></select></label><label>To <select id="transfer-to"></select></label><label>Amount <input id="transfer-amount" type="number" step="0.01" min="0.01" required></label><label>Description <input id="transfer-desc" placeholder="e.g. Move to savings"></label><button type="submit">Transfer</button></form>
+<div id="transfer-msg" class="msg" style="display:none"></div>
+<p class="muted">Validation: amounts must be positive, withdrawals and transfers are rejected when funds are insufficient, and transfers to the same account are rejected. Every successful transaction is added to history with a timestamp, type, description, and balance-after.</p>
+</section>
+
+<section class="view" id="view-transactions">
+<h2>Transaction history</h2>
+<label for="history-filter">Filter by account</label>
+<select id="history-filter"></select>
+<div class="table-wrap"><table><thead><tr><th>Date</th><th>Account</th><th>Type</th><th>Description</th><th>Amount</th><th>Balance after</th><th>Fraud score</th></tr></thead><tbody id="history-table"></tbody></table></div>
+</section>
+
+<section class="view" id="view-fraud">
+<h2>Fraud review queue</h2>
+<p>Flagged transactions: <strong id="fraud-count">0</strong> (flagged at a fraud score of 70 or more, out of 100).</p>
+<p class="muted">How scoring works - every transaction is scored transparently with these rules:</p>
+<ul id="fraud-rules"></ul>
+<div class="gate-note" id="fraud-gate">Manager / Admin view only: switch roles at the top of the page to see the fraud review queue. This is a demo UI gate only, not a security boundary.</div>
+<div class="table-wrap" id="fraud-table-wrap"><table><thead><tr><th>Date</th><th>Account</th><th>Description</th><th>Amount</th><th>Score</th><th>Reasons</th></tr></thead><tbody id="fraud-table"></tbody></table></div>
+<p class="muted">Try it: withdraw a very large amount late at night (00:00-04:59) and watch its score and badge in the transaction history.</p>
+</section>
+
+<section class="view" id="view-credit">
+<h2>Credit score calculator - illustrative only</h2>
+<p class="muted">This calculator is illustrative only. It is not a regulated credit decision and does not use a real credit bureau score.</p>
+<form id="credit-form">
+<label>Annual income <input id="credit-income" type="number" min="0" step="1" value="60000" required></label>
+<label>Monthly debt payments <input id="credit-debt" type="number" min="0" step="1" value="500" required></label>
+<label>Employment years <input id="credit-years" type="number" min="0" step="1" value="3" required></label>
+<label>Past defaults <input id="credit-defaults" type="number" min="0" step="1" value="0" required></label>
+<label>Savings balance <input id="credit-savings" type="number" min="0" step="1" value="8000" required></label>
+<button type="submit">Calculate score</button>
+</form>
+<div id="credit-result"></div>
+<p class="muted">Bands used here for illustration: under 580 Poor, 580-669 Fair, 670-739 Good, 740-850 Excellent. Score range 300-850.</p>
+</section>
+
+<section class="view" id="view-management">
+<h2>Management</h2>
+<div class="gate-note" id="mgmt-gate">Manager / Admin view only: switch roles at the top of the page to see management totals and the loan pipeline. This is a demo UI gate only, not a security boundary.</div>
+<div id="mgmt-content">
+<h3>Totals</h3>
+<div id="mgmt-totals"></div>
+<h3>Demo loan pipeline</h3>
+<p class="muted">Approve or reject a pending loan once. After a decision, the loan cannot be re-reviewed.</p>
+<div class="table-wrap"><table><thead><tr><th>Applicant (fictitious)</th><th>Purpose</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="loan-table"></tbody></table></div>
+</div>
+</section>
+</main>
+
+<footer>
+<p>DEMO ONLY - no real money, no real people, no real accounts. AI scores are illustrative, not regulated credit decisions. Not a production bank. This page uses no external scripts, fonts, or libraries and works offline from a file or from Pages.</p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
