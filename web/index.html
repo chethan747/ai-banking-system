@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Banking System — Demo Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="banner">DEMO / EDUCATIONAL ONLY — not a real bank, not PCI-DSS / SOC 2 compliant. AI scores are illustrative, not regulated decisions.</div>
+
+<div id="loginView" class="login-wrap">
+  <h2>AI Banking — Demo Login</h2>
+  <p>Sign in with a seeded demo account. No real credentials are used here.</p>
+  <form id="loginForm">
+    <label>Username <input id="username" autocomplete="username" required></label>
+    <label>Password <input id="password" type="password" autocomplete="current-password" required></label>
+    <button class="btn" type="submit">Log in</button>
+  </form>
+  <p id="loginError" class="msg err" hidden></p>
+  <div class="hint"><strong>Demo users</strong><br>
+    admin / admin123 (admin) &middot; manager / manager123 (manager)<br>
+    teller / teller123 (teller) &middot; customer / customer123 (customer)</div>
+</div>
+
+<div id="appView" hidden>
+  <header class="topbar">
+    <h1>AI Banking Dashboard</h1>
+    <span class="who" id="who"></span>
+    <button class="btn secondary" id="logoutBtn">Log out</button>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" id="nav">
+      <button data-view="dashboard" class="active">Dashboard</button>
+      <button data-view="accounts">Accounts</button>
+      <button data-view="transactions">Transactions</button>
+      <button data-view="transfers">Transfers</button>
+      <button data-view="fraud" data-role="manager admin">Fraud Review</button>
+      <button data-view="loans">Loans</button>
+      <button data-view="management" data-role="manager admin">Management</button>
+    </nav>
+    <main>
+      <p id="msg" class="msg" hidden></p>
+
+      <section id="view-dashboard" class="view active">
+        <h2>Dashboard</h2>
+        <div class="cards" id="summaryCards"></div>
+        <div class="grid2">
+          <div class="panel"><h3>Spending by category</h3><canvas id="chartCategory" width="640" height="220"></canvas><p id="insightsText"></p></div>
+          <div class="panel"><h3>Balance over time</h3><canvas id="chartBalance" width="640" height="220"></canvas></div>
+        </div>
+        <div class="panel"><h3>Fraud-flag trends (flagged transactions per date)</h3><canvas id="chartFraud" width="640" height="220"></canvas></div>
+        <div class="panel"><h3>Recent transactions</h3><div id="recentTx"></div></div>
+        <div class="panel"><h3>Ask the assistant</h3>
+          <form id="askForm"><label>Question <input id="question" placeholder="e.g. How do I transfer money?"></label>
+          <button class="btn" type="submit">Ask</button></form><p id="askAnswer"></p></div>
+      </section>
+
+      <section id="view-accounts" class="view">
+        <h2>Accounts</h2><div id="accountsTable"></div>
+        <div class="panel"><h3>Open a demo account</h3>
+          <form id="newAccountForm" class="formrow">
+            <label>Customer ID <input id="newCustId" type="number" required></label>
+            <label>Type <select id="newAcctType"><option value="checking">checking</option><option value="savings">savings</option></select></label>
+            <label>Initial balance <input id="newBalance" type="number" step="0.01" value="0"></label>
+            <span><button class="btn" type="submit">Create account</button></span>
+          </form></div>
+        <div class="panel"><h3>Deposit / Withdraw</h3>
+          <form id="moneyForm" class="formrow">
+            <label>Account ID <input id="moneyAcct" type="number" required></label>
+            <label>Amount <input id="moneyAmt" type="number" step="0.01" required></label>
+            <label>Description <input id="moneyDesc" placeholder="e.g. Supermarket groceries"></label>
+            <span style="display:flex;gap:8px;align-items:end"><button class="btn" type="submit" data-kind="deposit">Deposit</button><button class="btn secondary" type="submit" data-kind="withdraw">Withdraw</button></span>
+          </form></div>
+      </section>
+
+      <section id="view-transactions" class="view">
+        <h2>Transactions</h2>
+        <label>Account ID <input id="txAcct" type="number"></label>
+        <button class="btn" id="loadTxBtn">Load transactions</button>
+        <button class="btn secondary" id="loadStatementBtn">Monthly statement (current month)</button>
+        <div id="txTable" class="panel"></div><div id="statementBox"></div>
+      </section>
+
+      <section id="view-transfers" class="view">
+        <h2>Transfers</h2>
+        <form id="transferForm" class="formrow">
+          <label>From account ID <input id="fromId" type="number" required></label>
+          <label>To account ID <input id="toId" type="number" required></label>
+          <label>Amount <input id="transferAmt" type="number" step="0.01" required></label>
+          <label>Description <input id="transferDesc" placeholder="Demo transfer"></label>
+          <button class="btn" type="submit">Transfer</button>
+        </form>
+      </section>
+
+      <section id="view-fraud" class="view">
+        <h2>Fraud Review (manager / admin)</h2>
+        <p>Rule-based scores, threshold 70. Illustrative only — not a production fraud decision.</p>
+        <button class="btn" id="refreshFraudBtn">Refresh queue</button>
+        <div id="fraudTable" class="panel"></div>
+        <div class="panel"><h3>Score a transaction</h3>
+          <form id="fraudForm" class="formrow">
+            <label>Amount <input id="fraudAmt" type="number" step="0.01" required></label>
+            <label>Typical prior amounts (comma-separated) <input id="fraudHist" placeholder="50, 55, 40"></label>
+            <button class="btn" type="submit">Score</button>
+          </form><p id="fraudResult"></p></div>
+      </section>
+
+      <section id="view-loans" class="view">
+        <h2>Loans</h2><div id="loansTable"></div>
+        <div class="panel"><h3>Apply for a demo loan</h3>
+          <form id="loanForm" class="formrow">
+            <label>Customer ID <input id="loanCust" type="number" required></label>
+            <label>Amount <input id="loanAmt" type="number" step="0.01" required></label>
+            <label>Purpose <input id="loanPurpose" required></label>
+            <label>Term (months) <input id="loanTerm" type="number" value="24" required></label>
+            <button class="btn" type="submit">Apply</button>
+          </form></div>
+        <div class="panel"><h3>Illustrative credit score</h3>
+          <form id="creditForm" class="formrow">
+            <label>Annual income <input id="crIncome" type="number" value="80000"></label>
+            <label>Monthly debt <input id="crDebt" type="number" value="800"></label>
+            <label>Employment years <input id="crYears" type="number" value="4"></label>
+            <label>Past defaults <input id="crDefaults" type="number" value="0"></label>
+            <label>Open loans <input id="crLoans" type="number" value="1"></label>
+            <label>Savings balance <input id="crSavings" type="number" value="12000"></label>
+            <button class="btn" type="submit">Score</button>
+          </form><p id="creditResult"></p></div>
+      </section>
+
+      <section id="view-management" class="view">
+        <h2>Management (manager / admin)</h2>
+        <div id="reportsBox"></div>
+        <div class="panel"><h3>KYC records</h3><div id="kycTable"></div>
+          <form id="kycForm" class="formrow">
+            <label>Name <input id="kycName" required></label>
+            <label>Email <input id="kycEmail" required></label>
+            <label>Date of birth <input id="kycDob" placeholder="1990-01-01" required></label>
+            <label>Address <input id="kycAddr" required></label>
+            <label>ID type <input id="kycType" value="passport" required></label>
+            <label>Demo ID value (stored as SHA-256 hash only) <input id="kycId" required></label>
+            <button class="btn" type="submit">Add KYC record</button>
+          </form></div>
+        <div class="panel"><h3>Audit log (hash-chained)</h3><div id="auditTable"></div></div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
